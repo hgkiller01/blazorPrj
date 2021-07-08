@@ -1,0 +1,71 @@
+﻿@page "/fetchdata"
+
+@using System.Net.Http
+@using BlazorApp1.Data
+@using Microsoft.AspNetCore.Http
+@inject WeatherForecastService ForecastService
+@using System.Net.Http.Json
+@using System.Text.Json
+@inject Data.TokenProvider tokenProvider
+@inject IHttpContextAccessor httpContextAccessor
+<h1>Weather forecast</h1>
+
+<p>This component demonstrates fetching data from a service.</p>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<WeatherForecast> forecasts;
+    [Inject]
+    public HttpClient client { get; set; }
+    [Parameter]
+    public string data { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        var a = httpContextAccessor.HttpContext.Request;
+        var url = a.Scheme + "://" + a.Host.ToUriComponent() + "/api/";
+        //client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", tokenProvider.AntiforgeryToken);
+        //var data2 = await client.PostAsync("Values", new { test = new List<string>() { "a","b","c" } });
+
+        var datas = await client.PostAsJsonAsync<PostData>(url + "values", new PostData() { Test = new List<string>() { "a", "b", "c" } });
+        var result = await datas.Content.ReadFromJsonAsync<PostData>();
+        string fgga = httpContextAccessor.HttpContext.Request.Form["data"];
+
+    }
+    protected override void OnParametersSet()
+    {
+        string fgga = httpContextAccessor.HttpContext.Request.Form["data"];
+        base.OnParametersSet();
+    }
+    public class PostData
+    {
+        public List<string> Test { get; set; }
+    }
+}
